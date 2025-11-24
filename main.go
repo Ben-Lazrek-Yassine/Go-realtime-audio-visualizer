@@ -1,7 +1,7 @@
 package main
 
 import (
-	"visualizer/pkg/ui"
+	"visualizer/pkg/visualizer/ui"
 )
 
 func main() {
