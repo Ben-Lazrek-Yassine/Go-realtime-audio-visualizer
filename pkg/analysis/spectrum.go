@@ -1,14 +1,45 @@
 package analysis
 
-// Spectrum handles the FFT signal processing
+import (
+	"math/cmplx"
+
+	"github.com/mjibson/go-dsp/fft"
+)
+
 type Spectrum struct {
-	// TODO: Add FFT configuration (window size, etc)
+	Bass  float64
+	Mids  float64
+	Highs float64
 }
 
-// Process takes raw audio samples and returns frequency magnitudes
-func Process(samples []float32) []float64 {
-	// TODO: Apply Window function (Hanning/Hamming)
-	// TODO: Perform FFT
-	// TODO: Calculate magnitude
-	return nil
+func Process(samples []float32) (s Spectrum) {
+	if len(samples) == 0 {
+		return Spectrum{}
+	}
+
+	input := make([]float64, len(samples))
+	for i, v := range samples {
+		input[i] = float64(v)
+	}
+
+	coeffs := fft.FFTReal(input)
+
+	for i, c := range coeffs {
+		if i > len(coeffs)/2 {
+			break
+		}
+
+		magnitude := cmplx.Abs(c)
+
+		switch {
+		case i > 0 && i < 5:
+			s.Bass += magnitude
+		case i >= 5 && i < 50:
+			s.Mids += magnitude
+		case i >= 50:
+			s.Highs += magnitude
+		}
+	}
+
+	return s
 }
