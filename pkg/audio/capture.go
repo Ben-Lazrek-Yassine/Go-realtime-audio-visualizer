@@ -30,11 +30,12 @@ func NewAudioStream() *AudioStream {
 	return &AudioStream{
 		Context: context,
 		Device:  nil,
-		Samples: make(chan []float32),
+		Samples: make(chan []float32, 1024),
 	}
 }
 
 func (as *AudioStream) StartCapture() error {
+	logger.Info("Starting capture")
 	devices, err := as.Context.Devices(malgo.Playback)
 	if err != nil {
 		logger.Info("error getting default device")
@@ -49,7 +50,7 @@ func (as *AudioStream) StartCapture() error {
 	pinner.Pin(idPtr)
 	defer pinner.Unpin()
 
-	deviceConfig := malgo.DefaultDeviceConfig(malgo.Capture)
+	deviceConfig := malgo.DefaultDeviceConfig(malgo.Loopback)
 	deviceConfig.Capture.Format = malgo.FormatF32
 	deviceConfig.Capture.Channels = 2
 	deviceConfig.SampleRate = 44100
@@ -57,13 +58,19 @@ func (as *AudioStream) StartCapture() error {
 	deviceConfig.Capture.DeviceID = unsafe.Pointer(idPtr)
 
 	onRecvFrame := func(pOutputSample, pInputSamples []byte, frameCount uint32) {
-		sampleCount := uint32(len(pInputSamples)) / 4 // 4 bytes per float32
-		if sampleCount > 0 {
-			slice := make([]float32, sampleCount)
-			for i := 0; i < int(sampleCount); i++ {
-				slice[i] = float32(pInputSamples[i])
-			}
-			as.Samples <- slice
+		sampleCount := frameCount * 2
+		logger.Info("Audio frame received")
+		pSamples := (*float32)(unsafe.Pointer(&pInputSamples[0]))
+		rawSamples := unsafe.Slice(pSamples, sampleCount)
+
+		newSlice := make([]float32, sampleCount)
+		copy(newSlice, rawSamples)
+
+		select {
+		case as.Samples <- newSlice:
+			logger.Info("Audio frame received")
+		default:
+			logger.Warning("Dropping audio frame! Channel full.")
 		}
 	}
 
