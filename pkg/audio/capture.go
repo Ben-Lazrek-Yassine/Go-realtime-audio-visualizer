@@ -1,7 +1,6 @@
 package audio
 
 import (
-	"runtime"
 	"unsafe"
 	"visualizer/logger"
 
@@ -35,31 +34,19 @@ func NewAudioStream() *AudioStream {
 }
 
 func (as *AudioStream) StartCapture() error {
+
 	logger.Info("Starting capture")
-	devices, err := as.Context.Devices(malgo.Playback)
-	if err != nil {
-		logger.Info("error getting default device")
-		return err
-	}
-
-	speakerID := devices[0].ID
-	idPtr := new(malgo.DeviceID)
-	*idPtr = speakerID
-
-	var pinner runtime.Pinner
-	pinner.Pin(idPtr)
-	defer pinner.Unpin()
-
 	deviceConfig := malgo.DefaultDeviceConfig(malgo.Loopback)
 	deviceConfig.Capture.Format = malgo.FormatF32
 	deviceConfig.Capture.Channels = 2
 	deviceConfig.SampleRate = 44100
 
-	deviceConfig.Capture.DeviceID = unsafe.Pointer(idPtr)
-
 	onRecvFrame := func(pOutputSample, pInputSamples []byte, frameCount uint32) {
+		if frameCount == 0 {
+			return
+		}
+
 		sampleCount := frameCount * 2
-		logger.Info("Audio frame received")
 		pSamples := (*float32)(unsafe.Pointer(&pInputSamples[0]))
 		rawSamples := unsafe.Slice(pSamples, sampleCount)
 
@@ -68,7 +55,7 @@ func (as *AudioStream) StartCapture() error {
 
 		select {
 		case as.Samples <- newSlice:
-			logger.Info("Audio frame received")
+			// logger.Info("Got Audio!")
 		default:
 			logger.Warning("Dropping audio frame! Channel full.")
 		}
@@ -84,14 +71,9 @@ func (as *AudioStream) StartCapture() error {
 	}
 
 	as.Device = device
-
-	err = device.Start()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return device.Start()
 }
+
 func (as *AudioStream) Close() {
 	as.Context.Uninit()
 	as.Context.Free()
