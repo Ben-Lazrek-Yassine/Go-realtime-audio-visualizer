@@ -22,8 +22,8 @@ func main() {
 		frameCount++
 		spectrum := analysis.Process(samples)
 		drawBar := func(val float64, color string) string {
-			maxVal := 200.0
-			width := 15
+			maxVal := 100.0 // Adjusted for Log scale
+			width := 10     // Slightly smaller to fit 5 bars
 			percent := val / maxVal
 			if percent > 1.0 {
 				percent = 1.0
@@ -44,10 +44,12 @@ func main() {
 			return fmt.Sprintf("%s[%s]%s", color, bar, logger.Reset)
 		}
 
-		fmt.Printf("\033[2K\r BASS: %s  %.0f\n", drawBar(spectrum.Bass, logger.Red), spectrum.Bass)
-		fmt.Printf("\033[2K\r MIDS: %s  %.0f\n", drawBar(spectrum.Mids, logger.Green), spectrum.Mids)
-		fmt.Printf("\033[2K\r HIGH: %s  %.0f\n", drawBar(spectrum.Highs, logger.Cyan), spectrum.Highs)
-		fmt.Printf("\033[3A")
+		fmt.Printf("\033[2K\r SUB:   %s  %.0f\n", drawBar(spectrum.Sub, logger.Red), spectrum.Sub)
+		fmt.Printf("\033[2K\r KICK:  %s  %.0f\n", drawBar(spectrum.Kick, logger.Red), spectrum.Kick)
+		fmt.Printf("\033[2K\r SNARE: %s  %.0f\n", drawBar(spectrum.Snare, logger.Yellow), spectrum.Snare)
+		fmt.Printf("\033[2K\r VOCAL: %s  %.0f\n", drawBar(spectrum.Vocals, logger.Green), spectrum.Vocals)
+		fmt.Printf("\033[2K\r HIGH:  %s  %.0f\n", drawBar(spectrum.Highs, logger.Cyan), spectrum.Highs)
+		fmt.Printf("\033[5A") // Move up 5 lines
 	}
 
 }
