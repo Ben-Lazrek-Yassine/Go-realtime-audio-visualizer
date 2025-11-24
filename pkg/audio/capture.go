@@ -29,7 +29,7 @@ func NewAudioStream() *AudioStream {
 	return &AudioStream{
 		Context: context,
 		Device:  nil,
-		Samples: make(chan []float32, 1024),
+		Samples: make(chan []float32, 4096),
 	}
 }
 
