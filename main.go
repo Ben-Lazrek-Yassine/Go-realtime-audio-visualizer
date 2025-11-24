@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"visualizer/logger"
 	"visualizer/pkg/audio"
 )
@@ -8,6 +9,15 @@ import (
 func main() {
 	stream := audio.NewAudioStream()
 	defer stream.Close()
-	logger.Info("Audio stream initialized")
-	stream.StartCapture()
+
+	if err := stream.StartCapture(); err != nil {
+		logger.Error("Failed to start capture: %v", err)
+		return
+	}
+
+	for {
+		samples := <-stream.Samples
+		fmt.Println(samples)
+	}
+
 }
