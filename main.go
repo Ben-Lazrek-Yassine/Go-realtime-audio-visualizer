@@ -19,21 +19,11 @@ func main() {
 		context.Free()
 	}()
 
-	infos, err := context.Devices(malgo.Playback)
+	devices, err := context.Devices(malgo.Playback)
 	if err != nil {
-		fmt.Println("Error getting devices:", err)
+		fmt.Println("Error getting default device:", err)
 		os.Exit(1)
 	}
-	fmt.Println("Devices:", infos)
-
-	for i, info := range infos {
-		e := "ok"
-		full, err := context.DeviceInfo(malgo.Playback, info.ID, malgo.Shared)
-		if err != nil {
-			e = err.Error()
-		}
-		fmt.Printf("    %d: %v, %s, [%s], formats: %+v\n",
-			i, info.Name, info.ID, e, full.Formats)
-	}
+	fmt.Println("Default device:", devices)
 
 }
